@@ -1,0 +1,6 @@
+eclipse.preferences.version=1
+environment/project/cdt.managedbuild.toolchain.gnu.base.1882392411/PATH/delimiter=;
+environment/project/cdt.managedbuild.toolchain.gnu.base.1882392411/PATH/operation=replace
+environment/project/cdt.managedbuild.toolchain.gnu.base.1882392411/PATH/value=${PWD}\\..\\..\\bin;${PWD}\\..\\..\\opt\\cross\\bin;C\:\\Windows\\system32;C\:\\Windows;C\:\\Windows\\System32\\Wbem;C\:\\Windows\\System32\\WindowsPowerShell\\v1.0\\;C\:\\Program Files (x86)\\NVIDIA Corporation\\PhysX\\Common;d\:\\MATLAB\\MATLAB Production Server\\R2015a\\runtime\\win64;d\:\\MATLAB\\MATLAB Production Server\\R2015a\\bin;d\:\\MATLAB\\MATLAB Production Server\\R2015a\\polyspace\\bin;C\:\\Windows\\system32\\config\\systemprofile\\.dnx\\bin;C\:\\Program Files\\Microsoft DNX\\Dnvm\\;C\:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit\\
+environment/project/cdt.managedbuild.toolchain.gnu.base.1882392411/append=true
+environment/project/cdt.managedbuild.toolchain.gnu.base.1882392411/appendContributed=true
