@@ -27,7 +27,6 @@ void* kmalloc(unsigned int size)
 		map_frame(ptr_page_directory, ptr, firstFreeVAInKHeap, PERM_PRESENT|PERM_WRITEABLE);
 		firstFreeVAInKHeap += PAGE_SIZE;
 	}
-
 	allocatedHAddresses[idx].virtualAddress = retVal;
 	allocatedHAddresses[idx].size = size;
 	idx++;
@@ -52,17 +51,20 @@ void* kmalloc(unsigned int size)
 
 void kfree(void *virtual_address)
 {
-	uint32 i, size=0;
+	uint32 i, size=0,index;
 	for(i = 0; i < (KERNEL_HEAP_MAX-KERNEL_HEAP_START+1)/PAGE_SIZE;i++){
 		if(allocatedHAddresses[i].virtualAddress==virtual_address){
 			size=allocatedHAddresses[i].size;
+			index=i;
 			break;
 		}
 	}
+
 	for(i = 0; i < size; i++){
 		unmap_frame(ptr_page_directory,virtual_address);
 		virtual_address+=PAGE_SIZE;
 	}
+	allocatedHAddresses[index].size=0;
 	//TODO: [PROJECT 2016 - Kernel Dynamic Allocation/Deallocation] kfree()
 	// Write your code here, remove the panic and write your code
 	//panic("kfree() is not implemented yet...!!");
@@ -79,20 +81,30 @@ void kfree(void *virtual_address)
 
 unsigned int kheap_virtual_address(unsigned int physical_address)
 {
-
+	physical_address>>=12;
+	int i,j,k;
 	uint32 *ptr_page_table = NULL;
+	for(i=0;i<idx;i++)
+	{
+		if(allocatedHAddresses[i].size==0){//ignore
+			continue;
+		}
 
-	uint32 va = 0;
-	while(1 == 1) {
-		ptr_page_table = NULL;
-		get_page_table(ptr_page_directory,(void*) va,&ptr_page_table);
-
-		 uint32 actual = (ptr_page_table[PTX(va)] >> 12);
-		 actual *= PAGE_SIZE;
-			if(actual == physical_address)
-				return va;
-		va += PAGE_SIZE;
+		for(j=0;j<allocatedHAddresses[i].size;j++)
+		{
+			ptr_page_table = NULL;
+			get_page_table(ptr_page_directory,(void*) allocatedHAddresses[i].virtualAddress+(PAGE_SIZE*j),&ptr_page_table);
+			//difference between entered physical address and current iteration's phy add is less than page_size then it's in this frame.
+			unsigned long long diff = physical_address-(ptr_page_table[PTX(allocatedHAddresses[i].virtualAddress+(PAGE_SIZE*j))]>>12);
+			if(diff<PAGE_SIZE)
+			{
+				// return currentVirtualAddress+diff
+				return (unsigned int) allocatedHAddresses[i].virtualAddress+(PAGE_SIZE*j)+diff;
+				break;
+			}
+		}
 	}
+	return 0;
 
 	//TODO: [PROJECT 2016 - Kernel Dynamic Allocation/Deallocation] kheap_virtual_address()
 	// Write your code here, remove the panic and write your code
@@ -108,8 +120,12 @@ unsigned int kheap_physical_address(unsigned int virtual_address)
 {
 	uint32 *pageTable;
 	get_page_table(ptr_page_directory,(void*)virtual_address,&pageTable);
-	uint32 physicalAddress = pageTable[PTX(virtual_address)]>>12;
-	return physicalAddress;
+	uint32 physical= (pageTable[PTX(virtual_address)]>>12);
+	physical<<=12;
+	virtual_address<<=20;
+	virtual_address>>=20;
+	physical+=virtual_address;
+	return physical;
 	//TODO: [PROJECT 2016 - Kernel Dynamic Allocation/Deallocation] kheap_physical_address()
 	// Write your code here, remove the panic and write your code
 	//panic("kheap_physical_address() is not implemented yet...!!");
