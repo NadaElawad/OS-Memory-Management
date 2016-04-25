@@ -108,8 +108,12 @@ unsigned int kheap_physical_address(unsigned int virtual_address)
 {
 	uint32 *pageTable;
 	get_page_table(ptr_page_directory,(void*)virtual_address,&pageTable);
-	uint32 physicalAddress = pageTable[PTX(virtual_address)]>>12;
-	return physicalAddress;
+	uint32 physical= (pageTable[PTX(virtual_address)]>>12);
+	physical<<=12;
+	virtual_address<<=20;
+	virtual_address>>=20;
+	physical+=virtual_address;
+	return physical;
 	//TODO: [PROJECT 2016 - Kernel Dynamic Allocation/Deallocation] kheap_physical_address()
 	// Write your code here, remove the panic and write your code
 	//panic("kheap_physical_address() is not implemented yet...!!");
