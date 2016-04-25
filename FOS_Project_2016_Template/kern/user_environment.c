@@ -210,7 +210,7 @@ void free_environment(struct Env* e)
 
 void * create_user_page_WS(unsigned int numOfElements)
 {
-	return kmalloc(numOfElements);
+	return kmalloc(numOfElements*sizeof(struct WorkingSetElement));
 	//TODO: [PROJECT 2016 - Kernel Dynamic Allocation/Deallocation] create_user_page_WS()
 	// Write your code here, remove the panic and write your code
 	//panic("create_user_page_WS() is not implemented yet...!!");
@@ -225,7 +225,8 @@ void * create_user_page_WS(unsigned int numOfElements)
 
 void * create_user_directory()
 {
-	return kmalloc(1024);
+	void *allocaedAddress = kmalloc(PAGE_SIZE);
+	return allocaedAddress;
 	//TODO: [PROJECT 2016 - Kernel Dynamic Allocation/Deallocation] create_user_directory()
 	// Write your code here, remove the panic and write your code
 	// panic("create_user_directory() is not implemented yet...!!");
