@@ -201,7 +201,7 @@ void initialize_kernel_VM()
 // before the free_frame_list has been set up.
 //
 void* boot_allocate_space(uint32 size, uint32 align)
-																		{
+																				{
 	extern char end_of_kernel[];
 
 	// Initialize ptr_free_mem if this is the first time.
@@ -226,7 +226,7 @@ void* boot_allocate_space(uint32 size, uint32 align)
 	//	Step 4: return allocated space
 	return ptr_allocated_mem ;
 
-																		}
+																				}
 
 
 //
@@ -277,7 +277,7 @@ void boot_map_range(uint32 *ptr_page_directory, uint32 virtual_address, uint32 s
 // before the free_frame_list has been set up.
 //
 uint32* boot_get_page_table(uint32 *ptr_page_directory, uint32 virtual_address, int create)
-{
+		{
 	uint32 index_page_directory = PDX(virtual_address);
 	uint32 page_directory_entry = ptr_page_directory[index_page_directory];
 
@@ -297,7 +297,7 @@ uint32* boot_get_page_table(uint32 *ptr_page_directory, uint32 virtual_address, 
 			return 0 ;
 	}
 	return ptr_page_table ;
-}
+		}
 
 ///******************************* END of MAPPING KERNEL SPACE *******************************
 
@@ -530,17 +530,15 @@ int get_page_table(uint32 *ptr_page_directory, const void *virtual_address, uint
 
 void * create_page_table(uint32 *ptr_page_directory, const uint32 virtual_address)
 {
+	//return NULL;
 	//TODO: [PROJECT 2016 - Kernel Dynamic Allocation/Deallocation] create_page_table()
-	// Write your code here, remove the panic and write your code
-	panic("create_page_table() is not implemented yet...!!");
-
-	//Use kmalloc() to create a new page TABLE for the given virtual address and return the address of the created table
-	//refer to the project documentation for the detailed steps
-
-	//change this "return" according to your answer
+	uint32 tempVA = (uint32)kmalloc(1024);
+	uint32 *page_table = (uint32*) ptr_page_directory[PDX(virtual_address)];
+	uint32 pa = kheap_physical_address(tempVA);
+	page_table =(uint32*) pa;
 	return 0;
-}
 
+}
 void __static_cpt(uint32 *ptr_page_directory, const uint32 virtual_address, uint32 **ptr_page_table)
 {
 	struct Frame_Info* ptr_new_frame_info;
@@ -645,7 +643,7 @@ int map_frame(uint32 *ptr_page_directory, struct Frame_Info *ptr_frame_info, voi
 // Hint: implement using get_page_table() and get_frame_info().
 //
 struct Frame_Info * get_frame_info(uint32 *ptr_page_directory, void *virtual_address, uint32 **ptr_page_table)
-																{
+																		{
 	// Fill this function in
 	//cprintf(".gfi .1\n %x, %x, %x, \n", ptr_page_directory, virtual_address, ptr_page_table);
 	uint32 ret =  get_page_table(ptr_page_directory, virtual_address, ptr_page_table) ;
@@ -663,7 +661,7 @@ struct Frame_Info * get_frame_info(uint32 *ptr_page_directory, void *virtual_add
 		return 0;
 	}
 	return 0;
-																}
+																		}
 
 //
 // Unmaps the physical frame at 'virtual_address'.
@@ -760,9 +758,10 @@ int loadtime_map_frame(uint32 *ptr_page_directory, struct Frame_Info *ptr_frame_
 
 void allocateMem(struct Env* e, uint32 virtual_address, uint32 size)
 {
+	pf_add_empty_env_page(e, virtual_address, 0);
 	//TODO: [PROJECT 2016 - Dynamic Allocation] allocateMem() [Kernel Side]
 	// Write your code here, remove the panic and write your code
-	panic("allocateMem() is not implemented yet...!!");
+	//panic("allocateMem() is not implemented yet...!!");
 
 	//This function should allocate ALL pages of the required range in the PAGE FILE
 	//and allocate NOTHING in the main memory
@@ -1357,13 +1356,13 @@ inline void add_frame_to_storage(uint32* frames_storage, struct Frame_Info* ptr_
 
 // [2] Get a frame info from the storage of frames at the given index
 inline struct Frame_Info* get_frame_from_storage(uint32* frames_storage, uint32 index)
-						{
+								{
 	struct Frame_Info* ptr_frame_info;
 	uint32 *ptr_page_table ;
 	uint32 va = index * PAGE_SIZE ;
 	ptr_frame_info = get_frame_info(frames_storage, (void*) va, &ptr_page_table);
 	return ptr_frame_info;
-						}
+								}
 
 // [3] Clear the storage of frames
 inline void clear_frames_storage(uint32* frames_storage)

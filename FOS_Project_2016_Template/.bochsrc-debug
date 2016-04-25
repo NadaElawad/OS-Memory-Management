@@ -75,6 +75,7 @@
 # Bochs. Now the start address can be calculated from image size.
 #=======================================================================
 #romimage: file=$BXSHARE/BIOS-bochs-latest
+#romimage: file=./BIOS-bochs-latest
 romimage: file=./BIOS-bochs-latest_2-3
 #address=0xf0000
 #romimage: file=mybios.bin, address=0xfff80000 # 512k at memory top
@@ -152,7 +153,8 @@ megs: 512
 # You now need to load a VGA ROM BIOS into C0000.
 #=======================================================================
 #vgaromimage: file=bios/VGABIOS-elpin-2.40
-vgaromimage: file=$BXSHARE/VGABIOS-lgpl-latest
+#vgaromimage: file=$BXSHARE/VGABIOS-lgpl-latest
+vgaromimage: file=./VGABIOS-lgpl-latest
 #vgaromimage: file=bios/VGABIOS-lgpl-latest-cirrus
 
 #=======================================================================
@@ -444,7 +446,17 @@ debugger_log: -
 #   parport2: enabled=1, file="/dev/lp0"
 #   parport1: enabled=0
 #=======================================================================
-parport1: enabled=1, file="/dev/stdout"
+# parport1: enabled=1, file="/dev/stdout"
+parport1: enabled=1, file="stdout"
+# parport1: enabled=1, file="console.out"
+
+# WARNING: never use CON workaround with bochs-debug-gdb, it creates an
+# invalid file on the hard disk that connot be removed easily
+# (only with cmd: https://bytes.com/topic/windows/insights/929114-how-create-delete-folders-like-con-com1-prn-aux-clock-nul-windows-xp)
+# (https://support.microsoft.com/en-us/kb/120716)
+# parport1: enabled=1, file="CON"  # or "CON:"
+
+
 
 #=======================================================================
 # SB16:
@@ -494,7 +506,7 @@ parport1: enabled=1, file="/dev/stdout"
 # Examples:
 #   vga_update_interval: 250000
 #=======================================================================
-vga_update_interval: 300000
+#vga_update_interval: 300000
 
 # using for Winstone '98 tests
 #vga_update_interval:  100000
@@ -506,7 +518,7 @@ vga_update_interval: 300000
 # Examples:
 #   keyboard_serial_delay: 200
 #=======================================================================
-keyboard_serial_delay: 250
+# keyboard_serial_delay: 250
 
 #=======================================================================
 # KEYBOARD_PASTE_DELAY:
@@ -523,7 +535,7 @@ keyboard_serial_delay: 250
 # Examples:
 #   keyboard_paste_delay: 100000
 #=======================================================================
-keyboard_paste_delay: 100000
+# keyboard_paste_delay: 100000
 
 #=======================================================================
 # MOUSE: 
@@ -632,7 +644,7 @@ private_colormap: enabled=0
 # Examples:
 #   keyboard_mapping: enabled=1, map=gui/keymaps/x11-pc-de.map
 #=======================================================================
-keyboard_mapping: enabled=0, map=
+# keyboard_mapping: enabled=0, map=
 
 #=======================================================================
 # KEYBOARD_TYPE:

@@ -76,6 +76,7 @@
 # Bochs. Now the start address can be calculated from image size.
 #=======================================================================
 #romimage: file=$BXSHARE/BIOS-bochs-latest
+#romimage: file=./BIOS-bochs-latest
 romimage: file=./BIOS-bochs-latest_2-3
 #address=0xf0000
 #romimage: file=mybios.bin, address=0xfff80000 # 512k at memory top
@@ -125,6 +126,7 @@ megs: 512
 #megs: 32
 #megs: 16
 #megs: 8
+#megs: 7
 
 #=======================================================================
 # OPTROMIMAGE[1-4]:
@@ -152,7 +154,8 @@ megs: 512
 # You now need to load a VGA ROM BIOS into C0000.
 #=======================================================================
 #vgaromimage: file=bios/VGABIOS-elpin-2.40
-vgaromimage: file=$BXSHARE/VGABIOS-lgpl-latest
+#vgaromimage: file=$BXSHARE/VGABIOS-lgpl-latest
+vgaromimage: file=./VGABIOS-lgpl-latest
 #vgaromimage: file=bios/VGABIOS-lgpl-latest-cirrus
 
 #=======================================================================
@@ -445,7 +448,10 @@ debugger_log: -
 #   parport2: enabled=1, file="/dev/lp0"
 #   parport1: enabled=0
 #=======================================================================
-parport1: enabled=1, file="/dev/stdout"
+# parport1: enabled=1, file="/dev/stdout"
+# parport1: enabled=1, file="stdout"
+# parport1: enabled=1, file="console.out"
+parport1: enabled=1, file="CON"  # or "CON:"
 
 #=======================================================================
 # SB16:
@@ -507,7 +513,7 @@ parport1: enabled=1, file="/dev/stdout"
 # Examples:
 #   keyboard_serial_delay: 200
 #=======================================================================
-keyboard_serial_delay: 250
+# keyboard_serial_delay: 250
 
 #=======================================================================
 # KEYBOARD_PASTE_DELAY:
@@ -524,7 +530,7 @@ keyboard_serial_delay: 250
 # Examples:
 #   keyboard_paste_delay: 100000
 #=======================================================================
-keyboard_paste_delay: 100000
+# keyboard_paste_delay: 100000
 
 #=======================================================================
 # MOUSE: 
@@ -633,7 +639,7 @@ private_colormap: enabled=0
 # Examples:
 #   keyboard_mapping: enabled=1, map=gui/keymaps/x11-pc-de.map
 #=======================================================================
-keyboard_mapping: enabled=0, map=
+# keyboard_mapping: enabled=0, map=
 
 #=======================================================================
 # KEYBOARD_TYPE:

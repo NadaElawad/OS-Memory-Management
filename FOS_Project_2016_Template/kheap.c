@@ -1,11 +1,16 @@
 #include <inc/memlayout.h>
 #include <kern/kheap.h>
+
+
+
+
 #include <kern/memory_manager.h>
 
 //2016: NOTE: All kernel heap allocations are multiples of PAGE_SIZE (4KB)
 uint32 * firstFreeVAInKHeap  = NULL;
 void* kmalloc(unsigned int size)
 {
+	return 0;
 	uint32* returnVal = NULL;
 	if(firstFreeVAInKHeap == NULL)
 		firstFreeVAInKHeap = (uint32*) KERNEL_HEAP_START;
@@ -43,9 +48,10 @@ void* kmalloc(unsigned int size)
 
 void kfree(void* virtual_address)
 {
+
 	uint32 * ptr_page_table;
-	get_page_table(ptr_page_directory,(void*) virtual_address,&ptr_page_table);
 	uint32 physicalAddress = ptr_page_table[PTX(virtual_address)] >> 12;
+	get_page_table(ptr_page_directory,(void*) virtual_address,&ptr_page_table);
 	ptr_page_table[PTX(virtual_address)];
 	struct Frame_Info * ptr = to_frame_info(physicalAddress);
 	free_frame(ptr);
