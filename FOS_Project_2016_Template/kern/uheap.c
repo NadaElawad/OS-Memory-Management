@@ -26,18 +26,15 @@
 uint32 currentAddressForNextFitPlacement=KERNEL_HEAP_START;
 void* malloc(uint32 size)
 {
-	size = (size+PAGE_SIZE-1)/PAGE_SIZE;
-	//TODO: [PROJECT 2016 - Dynamic Allocation] malloc() [User Side]
-	if(sys_isUHeapPlacementStrategyNEXTFIT())
-	{
-		if(currentAddressForNextFitPlacement >= KERNEL_HEAP_MAX - size*PAGE_SIZE)
-			return NULL;
-		int ret = currentAddressForNextFitPlacement;
-		sys_allocateMem(currentAddressForNextFitPlacement ,size*PAGE_SIZE);
-		currentAddressForNextFitPlacement += size*PAGE_SIZE;
-		return (void*) ret;
-	}
-	return 0;
+	size = ROUNDUP(size, PAGE_SIZE);
+	if(currentAddressForNextFitPlacement > USER_HEAP_MAX - size)
+		return NULL;
+
+	int ret = currentAddressForNextFitPlacement;
+	sys_allocateMem(currentAddressForNextFitPlacement, size);
+	currentAddressForNextFitPlacement += size;
+
+	return (void*)ret;
 	// Steps:
 	//	1) Implement both NEXT FIT and BEST FIT strategies to search the heap for suitable space
 	//		to the required allocation size (space should be on 4 KB BOUNDARY)

@@ -490,17 +490,29 @@ void __page_fault_handler_with_buffering(struct Env * curenv, uint32 fault_va)
 //Handle the page fault
 void page_fault_handler(struct Env * curenv, uint32 fault_va)
 {
-	struct Frame_Info*ptr;
-	int whatever = allocate_frame(&ptr);
-	map_frame(ptr_page_directory, ptr,(void*) fault_va, PERM_USER | PERM_WRITEABLE);
-	pf_read_env_page(curenv,(uint32*) fault_va);
+	if(env_page_ws_get_size(curenv) >= curenv->page_WS_max_size)
+		return;
 
-	//TODO: [PROJECT 2016] PAGE FAULT HANDLER
-	//refer to the project documentation for the detailed steps
-	//TODO: [PROJECT 2016 - BONUS3] Apply FIFO and modifiedCLOCK algorithms
-	//TODO: [PROJECT 2016] PAGE FAULT HANDLER
-	// Write your code here, remove the panic and write your code
-	//panic("page_fault_handler() is not implemented yet...!!");
-	//refer to the project documentation for the detailed steps
-	//TODO: [PROJECT 2016 - BONUS3] Apply FIFO and modifiedCLOCK algorithms
+	struct Frame_Info*ptr;
+	int r = allocate_frame(&ptr);
+	if(ptr == NULL) return;
+	map_frame(curenv->env_page_directory, ptr, (void*)fault_va, PERM_USER|PERM_WRITEABLE|PERM_PRESENT);
+
+	uint32 r1 = pf_read_env_page(curenv, (void*)fault_va);
+	if(r1 == 0){
+		env_page_ws_set_entry(curenv, curenv->page_last_WS_index++, fault_va);
+	}
+	else if(r1 == E_PAGE_NOT_EXIST_IN_PF){
+		if(fault_va <= USTACKTOP && fault_va >= USTACKBOTTOM) {
+			pf_add_empty_env_page(curenv, fault_va, 0);
+			env_page_ws_set_entry(curenv, curenv->page_last_WS_index++, fault_va);
+		}
+		else {
+			unmap_frame(curenv->env_page_directory,(void*)fault_va);
+			panic("NOT STACK");
+		}
+	}
+	if(curenv->page_last_WS_index>=curenv->page_WS_max_size)
+		curenv->page_last_WS_index=0;
+	return;
 }
