@@ -1,0 +1,25 @@
+
+
+
+	     	     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	     	     !!                                                             !!
+	     	     !!                   !! FCIS says HELLO !!                     !!
+	     	     !!                                                             !!
+	     	     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+
+
+Physical memory: 524288K available, base = 640K, extended = 523264K
+Max Envs = 1379
+check_boot_pgdir() succeeded!
+
+Welcome to the FOS kernel command prompt!
+Type 'help' for a list of commands.
+FOS> run tm1
+Error: Please specify a working set size in the third argument, aborting.
+FOS> run tm1
+Error: Please specify a working set size in the third argument, aborting.
+FOS> run ttm1
+Error: Please specify a working set size in the third argument, aborting.
+FOS> 

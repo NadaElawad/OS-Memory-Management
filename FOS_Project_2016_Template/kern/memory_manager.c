@@ -537,8 +537,8 @@ void * create_page_table(uint32 *ptr_page_directory, const uint32 virtual_addres
 	if(page_table_addr==NULL) return NULL;
 
 	uint32 pa = kheap_physical_address((uint32)page_table_addr);
-	ptr_page_directory[PDX(virtual_address)] = (pa&(0xFFFFF000))|PERM_USER|PERM_WRITEABLE|PERM_PRESENT;
-
+	ptr_page_directory[PDX(virtual_address)] = CONSTRUCT_ENTRY(pa,PERM_USER|PERM_WRITEABLE|PERM_PRESENT);
+	tlbflush();
 	return page_table_addr;
 }
 
@@ -761,14 +761,13 @@ int loadtime_map_frame(uint32 *ptr_page_directory, struct Frame_Info *ptr_frame_
 
 void allocateMem(struct Env* e, uint32 virtual_address, uint32 size)
 {
-	size = (size+PAGE_SIZE-1)/PAGE_SIZE;
 	int i;
-
-	for(i = 0; i < size; i++){
-		pf_add_empty_env_page(e,virtual_address, 0);
-		virtual_address+=PAGE_SIZE;
+	for(i = 0; i < size; i+= PAGE_SIZE){
+		int ret = pf_add_empty_env_page(e, virtual_address, 0);
+		if(ret == E_NO_PAGE_FILE_SPACE)
+			panic("ERROR: Not enough virtual space on the page file");
+		virtual_address += PAGE_SIZE;
 	}
-
 	return;
 	//TODO: [PROJECT 2016 - Dynamic Allocation] allocateMem() [Kernel Side]
 	// Write your code here, remove the panic and write your code
@@ -776,7 +775,6 @@ void allocateMem(struct Env* e, uint32 virtual_address, uint32 size)
 
 	//This function should allocate ALL pages of the required range in the PAGE FILE
 	//and allocate NOTHING in the main memory
-
 }
 
 

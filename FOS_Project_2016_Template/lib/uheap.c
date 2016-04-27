@@ -23,9 +23,10 @@
 //		"memory_manager.c", then switch back to the user mode here
 //	the allocateMem function is empty, make sure to implement it.
 
-uint32 currentAddressForNextFitPlacement=KERNEL_HEAP_START;
+uint32 currentAddressForNextFitPlacement=USER_HEAP_START;
 void* malloc(uint32 size)
 {
+	//TODO: [PROJECT 2016 - Dynamic Allocation] malloc() [User Side]
 	size = ROUNDUP(size, PAGE_SIZE);
 	if(currentAddressForNextFitPlacement > USER_HEAP_MAX - size)
 		return NULL;

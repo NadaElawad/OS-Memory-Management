@@ -26,8 +26,9 @@
 uint32 currentAddressForNextFitPlacement=KERNEL_HEAP_START;
 void* malloc(uint32 size)
 {
-	size = ROUNDUP(size, PAGE_SIZE);
-	if(currentAddressForNextFitPlacement > USER_HEAP_MAX - size)
+	//TODO: [PROJECT 2016 - Dynamic Allocation] malloc() [User Side]
+	ROUNDUP(size, PAGE_SIZE);
+	if(currentAddressForNextFitPlacement >= USER_HEAP_MAX - size)
 		return NULL;
 
 	int ret = currentAddressForNextFitPlacement;
