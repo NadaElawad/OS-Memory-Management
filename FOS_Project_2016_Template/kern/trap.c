@@ -490,9 +490,44 @@ void __page_fault_handler_with_buffering(struct Env * curenv, uint32 fault_va)
 //Handle the page fault
 void page_fault_handler(struct Env * curenv, uint32 fault_va)
 {
-	if(env_page_ws_get_size(curenv) >= curenv->page_WS_max_size)
-		return;
+	int idxToReplace = curenv->page_last_WS_index;
+	if(env_page_ws_get_size(curenv) >= curenv->page_WS_max_size){
+		//modify idxToReplace by LRU logic
+		if(isPageReplacmentAlgorithmLRU()){
+			uint32 i, minTime = 1e9;
+			for(i = 0; i < curenv->page_WS_max_size; i++){
+				uint32 time = env_page_ws_get_time_stamp(curenv, i);
+				if(time < minTime){
+					idxToReplace = i;
+					minTime = time;
+				}
+			}
+		}
+		//modify idxToReplace by FIFO logic
+		else if(isPageReplacmentAlgorithmFIFO()){
+			//same as incrementing the last index.
+		}
+		//modify idxToReplace by CLOCK logic
+		else if(isPageReplacmentAlgorithmCLOCK()){
+			//logic goes here..
+		}
 
+		//remove page to be replaced regardless of the algorithm used
+		void *VA = (void*)env_page_ws_get_virtual_address(curenv, idxToReplace);
+		uint32 *page_table = NULL;
+		get_page_table(curenv->env_page_directory, VA, &page_table);
+		struct Frame_Info *ptr = get_frame_info(curenv->env_page_directory, VA, &page_table);
+		uint32 page_permissions = page_table[PTX(VA)];
+		if(page_permissions & PERM_MODIFIED){
+			pf_update_env_page(curenv, VA, ptr);
+		}
+		unmap_frame(curenv->env_page_directory, VA);
+		env_page_ws_clear_entry(curenv, idxToReplace);
+	}
+	//HAPPENS IN ALL CASES
+	while(!curenv->__uptr_pws[idxToReplace].empty) {
+		idxToReplace = (idxToReplace+1)%curenv->page_WS_max_size;
+	}
 	struct Frame_Info*ptr;
 	int r = allocate_frame(&ptr);
 	if(ptr == NULL) return;
@@ -500,19 +535,20 @@ void page_fault_handler(struct Env * curenv, uint32 fault_va)
 
 	uint32 r1 = pf_read_env_page(curenv, (void*)fault_va);
 	if(r1 == 0){
-		env_page_ws_set_entry(curenv, curenv->page_last_WS_index++, fault_va);
+		env_page_ws_set_entry(curenv, idxToReplace, fault_va);
 	}
 	else if(r1 == E_PAGE_NOT_EXIST_IN_PF){
-		if(fault_va <= USTACKTOP && fault_va >= USTACKBOTTOM) {
+		if(fault_va < USTACKTOP && fault_va >= USTACKBOTTOM) {
 			pf_add_empty_env_page(curenv, fault_va, 0);
-			env_page_ws_set_entry(curenv, curenv->page_last_WS_index++, fault_va);
+			env_page_ws_set_entry(curenv, idxToReplace, fault_va);
 		}
 		else {
 			unmap_frame(curenv->env_page_directory,(void*)fault_va);
 			panic("NOT STACK");
 		}
 	}
-	if(curenv->page_last_WS_index>=curenv->page_WS_max_size)
-		curenv->page_last_WS_index=0;
+
+	//To make sure not to go out of range
+	curenv->page_last_WS_index = (idxToReplace+1)%curenv->page_WS_max_size;
 	return;
 }
