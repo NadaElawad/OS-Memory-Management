@@ -8,6 +8,8 @@ struct Size_Address_KHeap{
 	void *virtualAddress;
 };
 
+uint32 virtualAddresses[1<<20];
+
 struct Size_Address_KHeap allocatedHAddresses[(KERNEL_HEAP_MAX-KERNEL_HEAP_START+1)/PAGE_SIZE];
 uint32 idx = 0;
 
@@ -25,6 +27,7 @@ void* kmalloc(unsigned int size)
 		struct Frame_Info *ptr;
 		if((r = allocate_frame(&ptr)) < 0) return NULL;
 		map_frame(ptr_page_directory, ptr, firstFreeVAInKHeap, PERM_PRESENT|PERM_WRITEABLE);
+		virtualAddresses[to_physical_address(ptr)/PAGE_SIZE] = (uint32)firstFreeVAInKHeap;
 		firstFreeVAInKHeap += PAGE_SIZE;
 	}
 	allocatedHAddresses[idx].virtualAddress = retVal;
@@ -51,7 +54,7 @@ void* kmalloc(unsigned int size)
 
 void kfree(void *virtual_address)
 {
-	uint32 i, size=0,index;
+	uint32 i, size=0, index;
 	for(i = 0; i < (KERNEL_HEAP_MAX-KERNEL_HEAP_START+1)/PAGE_SIZE;i++){
 		if(allocatedHAddresses[i].virtualAddress==virtual_address){
 			size=allocatedHAddresses[i].size;
@@ -61,6 +64,7 @@ void kfree(void *virtual_address)
 	}
 
 	for(i = 0; i < size; i++){
+		virtualAddresses[kheap_physical_address((uint32)virtual_address)/PAGE_SIZE]=0;
 		unmap_frame(ptr_page_directory,virtual_address);
 		virtual_address+=PAGE_SIZE;
 	}
@@ -81,16 +85,7 @@ void kfree(void *virtual_address)
 
 unsigned int kheap_virtual_address(unsigned int physical_address)
 {
-	uint32 i = 0;
-	for(i = KERNEL_HEAP_START; i < KERNEL_HEAP_MAX; i+=PAGE_SIZE){
-		uint32 *ptr_page_table = NULL;
-		get_page_table(ptr_page_directory, (void*)i, &ptr_page_table);
-		if(ptr_page_table!=NULL){
-			if((ptr_page_table[PTX(i)]&(0xFFFFF000))==physical_address)
-				return i;
-		}
-	}
-	return 0;
+	return virtualAddresses[physical_address/PAGE_SIZE];
 
 	//TODO: [PROJECT 2016 - Kernel Dynamic Allocation/Deallocation] kheap_virtual_address()
 	// Write your code here, remove the panic and write your code
@@ -107,11 +102,7 @@ unsigned int kheap_physical_address(unsigned int virtual_address)
 	uint32 *pageTable;
 	get_page_table(ptr_page_directory,(void*)virtual_address,&pageTable);
 	uint32 physical= (pageTable[PTX(virtual_address)]>>12);
-	physical<<=12;
-	virtual_address<<=20;
-	virtual_address>>=20;
-	physical+=virtual_address;
-	return physical;
+	return physical * PAGE_SIZE;
 	//TODO: [PROJECT 2016 - Kernel Dynamic Allocation/Deallocation] kheap_physical_address()
 	// Write your code here, remove the panic and write your code
 	//panic("kheap_physical_address() is not implemented yet...!!");
