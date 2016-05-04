@@ -491,10 +491,17 @@ void __page_fault_handler_with_buffering(struct Env * curenv, uint32 fault_va)
 void page_fault_handler(struct Env * curenv, uint32 fault_va)
 {
 	struct Frame_Info*ptr;
-	int whatever = allocate_frame(&ptr);
-	map_frame(ptr_page_directory, ptr,(void*) fault_va, PERM_USER | PERM_WRITEABLE);
-	pf_read_env_page(curenv,(uint32*) fault_va);
-
+	allocate_frame(&ptr);
+	map_frame(curenv->env_page_directory, ptr,(void*) fault_va, PERM_USER | PERM_WRITEABLE);
+	if(pf_read_env_page(curenv,(uint32*) fault_va) == E_PAGE_NOT_EXIST_IN_PF)
+	{
+		if(fault_va > USER_HEAP_MAX && fault_va < USER_TOP)
+			pf_add_empty_env_page(curenv, fault_va, 0);
+	}
+	env_page_ws_set_entry(curenv, curenv->page_last_WS_index,fault_va);
+	++curenv->page_last_WS_index;
+	if(curenv->page_last_WS_index == curenv->page_WS_max_size)
+		curenv->page_last_WS_index = 0;
 	//TODO: [PROJECT 2016] PAGE FAULT HANDLER
 	//refer to the project documentation for the detailed steps
 	//TODO: [PROJECT 2016 - BONUS3] Apply FIFO and modifiedCLOCK algorithms

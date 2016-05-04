@@ -11,6 +11,13 @@
  *	-there's no suitable space for the required allocation
  */
 
+struct Size_Address_UHeap{
+	uint32 size;
+	uint32 virtualAddress;
+};
+
+struct Size_Address_UHeap sizeOfVAs[(USER_HEAP_MAX-USER_HEAP_START)/PAGE_SIZE];
+
 // malloc()
 //	This function use both NEXT FIT and BEST FIT strategies to allocate space in heap
 //  with the given size and return void pointer to the start of the allocated space
@@ -23,21 +30,19 @@
 //		"memory_manager.c", then switch back to the user mode here
 //	the allocateMem function is empty, make sure to implement it.
 
-uint32 currentAddressForNextFitPlacement=KERNEL_HEAP_START;
+uint32 currentAddressForNextFitPlacement=USER_HEAP_START;
 void* malloc(uint32 size)
 {
-
 	//TODO: [PROJECT 2016 - Dynamic Allocation] malloc() [User Side]
-	if(sys_isUHeapPlacementStrategyNEXTFIT())
-	{
-		if(currentAddressForNextFitPlacement + size >= KERNEL_HEAP_MAX)
-			return NULL;
-		int ret = currentAddressForNextFitPlacement;
-		sys_allocateMem(currentAddressForNextFitPlacement ,size);
-		currentAddressForNextFitPlacement += size;
-		return (void*) ret;
-	}
-	return 0;
+	size = ROUNDUP(size, PAGE_SIZE);
+	if(currentAddressForNextFitPlacement > USER_HEAP_MAX - size)
+		return NULL;
+
+	int ret = currentAddressForNextFitPlacement;
+	sys_allocateMem(currentAddressForNextFitPlacement, size);
+	currentAddressForNextFitPlacement += size;
+
+	return (void*)ret;
 	// Steps:
 	//	1) Implement both NEXT FIT and BEST FIT strategies to search the heap for suitable space
 	//		to the required allocation size (space should be on 4 KB BOUNDARY)
@@ -69,12 +74,16 @@ void* malloc(uint32 size)
 void free(void* virtual_address)
 {
 	//TODO: [PROJECT 2016 - Dynamic Deallocation] free() [User Side]
-	// Write your code here, remove the panic and write your code
-	panic("free() is not implemented yet...!!");
 
 	//get the size of the given allocation using its address
 	//you need to call sys_freeMem()
-
+	uint32 sizeArray = sizeof(sizeOfVAs)/ sizeof(sizeOfVAs[0]);
+	uint32 i;
+	for(i = 0;i < sizeArray;++i)
+	{
+		if((void *)sizeOfVAs[i].virtualAddress == virtual_address)
+			sys_freeMem((uint32)virtual_address, sizeOfVAs[i].size);
+	}
 }
 
 

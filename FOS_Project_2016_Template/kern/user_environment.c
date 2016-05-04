@@ -211,7 +211,7 @@ void free_environment(struct Env* e)
 void * create_user_page_WS(unsigned int numOfElements)
 {
 	return kmalloc(numOfElements*sizeof(struct WorkingSetElement));
-	//TODO: [PROJECT 2016 - Kernel Dynamic Allocation/Deallocation] create_user_page_WS()
+
 	// Write your code here, remove the panic and write your code
 	//panic("create_user_page_WS() is not implemented yet...!!");
 

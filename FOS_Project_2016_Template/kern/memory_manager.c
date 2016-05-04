@@ -537,8 +537,8 @@ void * create_page_table(uint32 *ptr_page_directory, const uint32 virtual_addres
 	if(page_table_addr==NULL) return NULL;
 
 	uint32 pa = kheap_physical_address((uint32)page_table_addr);
-	ptr_page_directory[PDX(virtual_address)] = (pa&(0xFFFFF000))|PERM_USER|PERM_WRITEABLE|PERM_PRESENT;
-
+	ptr_page_directory[PDX(virtual_address)] = CONSTRUCT_ENTRY(pa,PERM_USER|PERM_WRITEABLE|PERM_PRESENT);
+	tlbflush();
 	return page_table_addr;
 }
 
@@ -761,14 +761,13 @@ int loadtime_map_frame(uint32 *ptr_page_directory, struct Frame_Info *ptr_frame_
 
 void allocateMem(struct Env* e, uint32 virtual_address, uint32 size)
 {
-	size = (size+PAGE_SIZE-1)/PAGE_SIZE;
 	int i;
-
-	for(i = 0; i < size; i++){
-		pf_add_empty_env_page(e,virtual_address, 0);
-		virtual_address+=PAGE_SIZE;
+	for(i = 0; i < size; i+= PAGE_SIZE){
+		int ret = pf_add_empty_env_page(e, virtual_address, 0);
+		if(ret == E_NO_PAGE_FILE_SPACE)
+			panic("ERROR: Not enough virtual space on the page file");
+		virtual_address += PAGE_SIZE;
 	}
-
 	return;
 	//TODO: [PROJECT 2016 - Dynamic Allocation] allocateMem() [Kernel Side]
 	// Write your code here, remove the panic and write your code
@@ -776,7 +775,6 @@ void allocateMem(struct Env* e, uint32 virtual_address, uint32 size)
 
 	//This function should allocate ALL pages of the required range in the PAGE FILE
 	//and allocate NOTHING in the main memory
-
 }
 
 
@@ -785,14 +783,50 @@ void allocateMem(struct Env* e, uint32 virtual_address, uint32 size)
 void freeMem(struct Env* e, uint32 virtual_address, uint32 size)
 {
 	//TODO: [PROJECT 2016 - Dynamic Deallocation] freeMem() [Kernel Side]
-	// Write your code here, remove the panic and write your code
-	panic("freeMem() is not implemented yet...!!");
-
 	//This function should:
 	//1. Free ALL pages of the given range from the Page File
 	//2. Free ONLY pages that are resident in the working set from the memory
 	//3. Removes ONLY the empty page tables (i.e. not used) (no pages are mapped in the table)
-
+	uint32 i;
+	ROUNDDOWN(virtual_address, PAGE_SIZE);
+	ROUNDUP(size, PAGE_SIZE);
+	uint32 temp_va = virtual_address;
+	for(i = 0;i < size; i+= PAGE_SIZE)
+	{
+		pf_remove_env_page(e, temp_va);
+		temp_va += PAGE_SIZE;
+	}
+	temp_va = virtual_address;
+	uint32 j;
+	for(j = 0; j < size; j+= PAGE_SIZE)
+	{
+		for(i = 0;i < env_page_ws_get_size(e);i++)
+			if(e->__uptr_pws[i].virtual_address == temp_va)
+			{
+				env_page_ws_clear_entry(e, i);
+				break;
+			}
+		temp_va += PAGE_SIZE;
+	}
+	uint32 *ptr_page_table;
+	uint32 page_counter = 0;
+	for(i = 0; i < size;i += PAGE_SIZE)
+	{
+		get_page_table(e->env_page_directory, (void *)virtual_address, &ptr_page_table);
+		if(ptr_page_table != NULL)
+		{
+			uint32 frame_num = ptr_page_table[PTX(virtual_address)];
+			uint32 pa = frame_num * PAGE_SIZE;
+			if(pa & PERM_PRESENT)
+				++page_counter;
+		}
+		if(page_counter == 1024)
+		{
+			unmap_frame(e->env_page_directory, (void *)virtual_address);
+			page_counter = 0;
+		}
+		virtual_address += PAGE_SIZE;
+	}
 	//Refer to the project documentation for detailed steps
 }
 

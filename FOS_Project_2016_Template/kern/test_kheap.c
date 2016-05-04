@@ -786,6 +786,8 @@ int test_kheap_phys_addr()
 
 }
 
+uint32 global1_allPAs[(13*Mega + 32*kilo)/PAGE_SIZE] ;
+
 int test_kheap_virt_addr()
 {
 	char minByte = 1<<7;
@@ -874,7 +876,6 @@ int test_kheap_virt_addr()
 		if ((freeFrames - sys_calculate_free_frames()) != 4) panic("Wrong allocation: pages are not loaded successfully into memory");
 	}
 
-	uint32 allPAs[(13*Mega + 32*kilo)/PAGE_SIZE] ;
 	int numOfFrames = (13*Mega + 32*kilo)/PAGE_SIZE ;
 
 	//test kheap_virtual_address after kmalloc only [40%]
@@ -892,8 +893,8 @@ int test_kheap_virt_addr()
 
 			for (j = 0; i < numOfFrames && j < 1024; ++j, ++i)
 			{
-				allPAs[i] = (ptr_table[j] & 0xFFFFF000);
-				uint32 retrievedVA = kheap_virtual_address(allPAs[i]);
+				global1_allPAs[i] = (ptr_table[j] & 0xFFFFF000);
+				uint32 retrievedVA = kheap_virtual_address(global1_allPAs[i]);
 
 				if (retrievedVA != (va + j*PAGE_SIZE))
 				{
@@ -939,7 +940,7 @@ int test_kheap_virt_addr()
 		//frames of first 4 MB
 		for (i = 0; i < 4*Mega/PAGE_SIZE; ++i)
 		{
-			uint32 retrievedVA = kheap_virtual_address(allPAs[i]);
+			uint32 retrievedVA = kheap_virtual_address(global1_allPAs[i]);
 			if (retrievedVA != 0)
 			{
 				panic("Wrong kheap_virtual_address");
@@ -949,7 +950,7 @@ int test_kheap_virt_addr()
 		//next frames until 6 MB
 		for (i = 4*Mega/PAGE_SIZE; i < (7*Mega + 16*kilo)/PAGE_SIZE; ++i)
 		{
-			uint32 retrievedVA = kheap_virtual_address(allPAs[i]);
+			uint32 retrievedVA = kheap_virtual_address(global1_allPAs[i]);
 			if (retrievedVA != KERNEL_HEAP_START + i*PAGE_SIZE)
 			{
 				panic("Wrong kheap_virtual_address");
@@ -958,7 +959,7 @@ int test_kheap_virt_addr()
 		//frames of 6 MB
 		for (i = (7*Mega + 16*kilo)/PAGE_SIZE; i < (13*Mega + 16*kilo)/PAGE_SIZE; ++i)
 		{
-			uint32 retrievedVA = kheap_virtual_address(allPAs[i]);
+			uint32 retrievedVA = kheap_virtual_address(global1_allPAs[i]);
 			if (retrievedVA != 0)
 			{
 				panic("Wrong kheap_virtual_address");
@@ -967,7 +968,7 @@ int test_kheap_virt_addr()
 		//frames of last allocation (14 KB)
 		for (i = (13*Mega + 16*kilo)/PAGE_SIZE; i < (13*Mega + 32*kilo)/PAGE_SIZE; ++i)
 		{
-			uint32 retrievedVA = kheap_virtual_address(allPAs[i]);
+			uint32 retrievedVA = kheap_virtual_address(global1_allPAs[i]);
 			if (retrievedVA != KERNEL_HEAP_START + i*PAGE_SIZE)
 			{
 				panic("Wrong kheap_virtual_address");
