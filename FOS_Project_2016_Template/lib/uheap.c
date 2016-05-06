@@ -22,10 +22,17 @@
 //		switches to the kernel mode, calls allocateMem(struct Env* e, uint32 virtual_address, uint32 size) in
 //		"memory_manager.c", then switch back to the user mode here
 //	the allocateMem function is empty, make sure to implement it.
+struct Size_Address_UHeap{
+	uint32 size;
+	uint32 virtualAddress;
+};
 
-uint32 currentAddressForNextFitPlacement=KERNEL_HEAP_START;
+struct Size_Address_UHeap sizeOfVAs[(USER_HEAP_MAX-USER_HEAP_START)/PAGE_SIZE];
+
+uint32 currentAddressForNextFitPlacement = USER_HEAP_START;
 void* malloc(uint32 size)
 {
+	//TODO: [PROJECT 2016 - Dynamic Allocation] malloc() [User Side]
 	size = ROUNDUP(size, PAGE_SIZE);
 	if(currentAddressForNextFitPlacement > USER_HEAP_MAX - size)
 		return NULL;
@@ -65,9 +72,17 @@ void* malloc(uint32 size)
 
 void free(void* virtual_address)
 {
+	cprintf("Function free called in lib\n");
+	uint32 sizeArray = sizeof(sizeOfVAs)/ sizeof(sizeOfVAs[0]);
+	uint32 i;
+	for(i = 0;i < sizeArray;++i)
+	{
+		//if((void *)sizeOfVAs[i].virtualAddress == virtual_address)
+		sys_freeMem((uint32)virtual_address, sizeOfVAs[i].size);
+	}
 	//TODO: [PROJECT 2016 - Dynamic Deallocation] free() [User Side]
 	// Write your code here, remove the panic and write your code
-	panic("free() is not implemented yet...!!");
+	//panic("free() is not implemented yet...!!");
 
 	//get the size of the given allocation using its address
 	//you need to call sys_freeMem()

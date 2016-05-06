@@ -776,7 +776,6 @@ void allocateMem(struct Env* e, uint32 virtual_address, uint32 size)
 
 	//This function should allocate ALL pages of the required range in the PAGE FILE
 	//and allocate NOTHING in the main memory
-
 }
 
 
@@ -785,14 +784,54 @@ void allocateMem(struct Env* e, uint32 virtual_address, uint32 size)
 void freeMem(struct Env* e, uint32 virtual_address, uint32 size)
 {
 	//TODO: [PROJECT 2016 - Dynamic Deallocation] freeMem() [Kernel Side]
-	// Write your code here, remove the panic and write your code
-	panic("freeMem() is not implemented yet...!!");
-
 	//This function should:
 	//1. Free ALL pages of the given range from the Page File
 	//2. Free ONLY pages that are resident in the working set from the memory
 	//3. Removes ONLY the empty page tables (i.e. not used) (no pages are mapped in the table)
-
+	cprintf("Function freeMem called!\n");
+	uint32 i;
+	virtual_address = ROUNDDOWN(virtual_address, PAGE_SIZE);
+	size = ROUNDUP(size, PAGE_SIZE);
+	uint32 temp_va = virtual_address;
+	uint32 counter;
+	for(i = 0;i < size; i+= PAGE_SIZE)
+	{
+		pf_remove_env_page(e, temp_va);
+		temp_va += PAGE_SIZE;
+		++counter;
+	}
+	cprintf("%d\n",counter);
+	temp_va = virtual_address;
+	uint32 j;
+	for(j = 0; j < size; j+= PAGE_SIZE)
+	{
+		for(i = 0;i < env_page_ws_get_size(e);i++)
+			if(e->__uptr_pws[i].virtual_address == temp_va)
+			{
+				env_page_ws_clear_entry(e, i);
+				break;
+			}
+		temp_va += PAGE_SIZE;
+	}
+	uint32 *ptr_page_table;
+	uint32 page_counter = 0;
+	for(i = 0; i < size;i += PAGE_SIZE)
+	{
+		get_page_table(e->env_page_directory, (void *)virtual_address, &ptr_page_table);
+		if(ptr_page_table != NULL)
+		{
+			uint32 frame_num = ptr_page_table[PTX(virtual_address)];
+			uint32 pa = frame_num * PAGE_SIZE;
+			if(pa & PERM_PRESENT)
+				++page_counter;
+		}
+		if(page_counter == 1024)
+		{
+			unmap_frame(e->env_page_directory, (void *)virtual_address);
+			page_counter = 0;
+		}
+		virtual_address += PAGE_SIZE;
+	}
 	//Refer to the project documentation for detailed steps
 }
 
