@@ -1,3 +1,0 @@
-#include <kern/tests.h>
-
-
