@@ -6,6 +6,7 @@
 struct Size_Address_KHeap{
 	uint32 size;
 	void *virtualAddress;
+	uint32 empty;
 };
 
 uint32 virtualAddresses[1<<20];
@@ -14,8 +15,127 @@ struct Size_Address_KHeap allocatedHAddresses[(KERNEL_HEAP_MAX-KERNEL_HEAP_START
 uint32 idx = 0;
 
 void *firstFreeVAInKHeap  = (void*)(KERNEL_HEAP_START);
+void* kmallocFirstFit(unsigned int size)
+{
+	int i, j,r = 0,freedFrameFound=0,firstFitIndex,freeSizeSum=0,count=0;
+	void* retVal,*writeAt;
+	size = (size+PAGE_SIZE-1)/PAGE_SIZE;
+
+	if(firstFreeVAInKHeap >= (void*)KERNEL_HEAP_MAX-size*PAGE_SIZE)//If size doesn't fit
+	{
+		for(i=0;i<idx;i++)//Check previous allocations
+		{//If size fits in that allocation && it's been freed then write inside it.
+			if(allocatedHAddresses[i].empty==1)
+			{
+				freeSizeSum+=allocatedHAddresses[i].size;
+				j=i+1;
+				count++;
+				while(j<idx&&freeSizeSum<size&&allocatedHAddresses[j].empty==1)
+				{
+					freeSizeSum+=allocatedHAddresses[j].size;
+					j++;
+					count++;
+				}
+				if(freeSizeSum>=size){//merge these frames
+					firstFitIndex=i;
+					writeAt=allocatedHAddresses[i].virtualAddress;
+					freedFrameFound=1;
+					break;
+				}
+			}
+		}
+		if(!freedFrameFound)
+			return NULL;
+	}
+	if(!freedFrameFound)writeAt=firstFreeVAInKHeap;
+	retVal = writeAt;
+	for(i = 0; i < size; i++){
+		struct Frame_Info *ptr;
+		if((r = allocate_frame(&ptr)) < 0) return NULL;
+		map_frame(ptr_page_directory, ptr, writeAt, PERM_PRESENT|PERM_WRITEABLE);
+		virtualAddresses[to_physical_address(ptr)/PAGE_SIZE] = (uint32)writeAt;
+		writeAt += PAGE_SIZE;
+	}
+	if(freedFrameFound){
+		// update
+		allocatedHAddresses[firstFitIndex].size=size;
+		for(i=0;i<count;i++){
+			allocatedHAddresses[firstFitIndex+i].empty=0;
+		}
+	}
+	else{
+		firstFreeVAInKHeap=writeAt;
+		allocatedHAddresses[idx].virtualAddress = retVal;
+		allocatedHAddresses[idx].size = size;
+		idx++;
+	}
+	return retVal;
+}
+
+void *kmallocBestFit(unsigned int size)
+{
+	int i, j,r = 0,freedFrameFound=0,bestFitIndex,freeSizeSum=0,count=0;
+	void* retVal,*writeAt;
+	size = (size+PAGE_SIZE-1)/PAGE_SIZE;
+	int difference=1e9;
+
+	for(i=0;i<idx;i++)//Check previous allocations
+	{//If size fit's in that allocation && it's been freed then write inside it.
+		if(allocatedHAddresses[i].empty==1)
+		{
+			freeSizeSum+=allocatedHAddresses[i].size;
+			j=i+1;
+			count++;
+			while(j<idx&&freeSizeSum<size&&allocatedHAddresses[j].empty==1)
+			{
+				freeSizeSum+=allocatedHAddresses[j].size;
+				j++;
+				count++;
+			}
+
+			if(freeSizeSum>=size &&freeSizeSum-size<difference)
+			{
+				bestFitIndex=i;
+				writeAt=allocatedHAddresses[i].virtualAddress;
+				freedFrameFound=1;
+				difference=freeSizeSum-size;
+			}
+
+		}
+	}
+	if(firstFreeVAInKHeap >= (void*)KERNEL_HEAP_MAX-size*PAGE_SIZE && !freedFrameFound)
+		return NULL;
+
+	if(!freedFrameFound)writeAt=firstFreeVAInKHeap;
+	retVal = writeAt;
+	for(i = 0; i < size; i++){
+		struct Frame_Info *ptr;
+		if((r = allocate_frame(&ptr)) < 0) return NULL;
+		map_frame(ptr_page_directory, ptr, writeAt, PERM_PRESENT|PERM_WRITEABLE);
+		virtualAddresses[to_physical_address(ptr)/PAGE_SIZE] = (uint32)writeAt;
+		writeAt += PAGE_SIZE;
+	}
+	if(freedFrameFound){
+		// update
+		allocatedHAddresses[bestFitIndex].size=size;
+		for(i=0;i<count;i++)
+			allocatedHAddresses[bestFitIndex+i].empty=0;
+	}
+	else{
+		firstFreeVAInKHeap=writeAt;
+		allocatedHAddresses[idx].virtualAddress = retVal;
+		allocatedHAddresses[idx].size = size;
+		idx++;
+	}
+	return retVal;
+}
+
 void* kmalloc(unsigned int size)
 {
+	return kmallocFirstFit(size);
+	//return kmallocBestFit(size);
+
+	//Original kmalloc Code
 	size = (size+PAGE_SIZE-1)/PAGE_SIZE;
 	if(firstFreeVAInKHeap >= (void*)KERNEL_HEAP_MAX-size*PAGE_SIZE)
 		return NULL;
@@ -32,8 +152,12 @@ void* kmalloc(unsigned int size)
 	}
 	allocatedHAddresses[idx].virtualAddress = retVal;
 	allocatedHAddresses[idx].size = size;
+	allocatedHAddresses[idx].empty=0;
 	idx++;
+
+	//cprintf("Allocating %x\n",retVal);
 	return retVal;
+
 	//TODO: [PROJECT 2016 - Kernel Dynamic Allocation/Deallocation] kmalloc()
 	// Wptrrite your code here, remove the panic and write your code
 	//panic("kmalloc() is not implemented yet...!!");
@@ -62,13 +186,15 @@ void kfree(void *virtual_address)
 			break;
 		}
 	}
-
 	for(i = 0; i < size; i++){
 		virtualAddresses[kheap_physical_address((uint32)virtual_address)/PAGE_SIZE]=0;
 		unmap_frame(ptr_page_directory,virtual_address);
 		virtual_address+=PAGE_SIZE;
 	}
-	allocatedHAddresses[index].size=0;
+
+
+	allocatedHAddresses[index].empty=1;
+
 	//TODO: [PROJECT 2016 - Kernel Dynamic Allocation/Deallocation] kfree()
 	// Write your code here, remove the panic and write your code
 	//panic("kfree() is not implemented yet...!!");
