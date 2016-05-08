@@ -11,7 +11,7 @@ struct MyStruct
 	int c;
 };
 void _main(void)
-{	
+{
 	int envID = sys_getenvid();
 
 	volatile struct Env* myEnv;
@@ -32,7 +32,7 @@ void _main(void)
 		char *byteArr = (char *) ptr_allocations[0];
 		int lastIndexOfByte = (2*Mega-kilo)/sizeof(char) - 1;
 		byteArr[0] = minByte ;
-		byteArr[lastIndexOfByte] = maxByte ;
+		byteArr[lastIndexOfByte] = maxByte;
 
 		ptr_allocations[1] = malloc(2*Mega-kilo);
 		short *shortArr = (short *) ptr_allocations[1];

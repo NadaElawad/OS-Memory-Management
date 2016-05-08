@@ -72,13 +72,16 @@ void* malloc(uint32 size)
 
 void free(void* virtual_address)
 {
-	cprintf("Function free called in lib\n");
+	//cprintf("Function free called in lib\n");
+	virtual_address=ROUNDDOWN(virtual_address, PAGE_SIZE);
 	uint32 sizeArray = sizeof(sizeOfVAs)/ sizeof(sizeOfVAs[0]);
 	uint32 i;
-	for(i = 0;i < sizeArray;++i)
+	for(i = 0;i < sizeArray; ++i)
 	{
-		//if((void *)sizeOfVAs[i].virtualAddress == virtual_address)
-		sys_freeMem((uint32)virtual_address, sizeOfVAs[i].size);
+		if((void *)sizeOfVAs[i].virtualAddress == virtual_address){
+			sys_freeMem((uint32)virtual_address, sizeOfVAs[i].size);
+			break;
+		}
 	}
 	//TODO: [PROJECT 2016 - Dynamic Deallocation] free() [User Side]
 	// Write your code here, remove the panic and write your code

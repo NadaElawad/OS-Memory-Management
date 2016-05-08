@@ -788,24 +788,23 @@ void freeMem(struct Env* e, uint32 virtual_address, uint32 size)
 	//1. Free ALL pages of the given range from the Page File
 	//2. Free ONLY pages that are resident in the working set from the memory
 	//3. Removes ONLY the empty page tables (i.e. not used) (no pages are mapped in the table)
-	cprintf("Function freeMem called!\n");
-	uint32 i;
+	//cprintf("Function freeMem called!\n");
 	virtual_address = ROUNDDOWN(virtual_address, PAGE_SIZE);
 	size = ROUNDUP(size, PAGE_SIZE);
 	uint32 temp_va = virtual_address;
-	uint32 counter;
+	uint32 counter = 0, i;
 	for(i = 0;i < size; i+= PAGE_SIZE)
 	{
 		pf_remove_env_page(e, temp_va);
 		temp_va += PAGE_SIZE;
 		++counter;
 	}
-	cprintf("%d\n",counter);
+	//cprintf("%d\n",counter);
 	temp_va = virtual_address;
 	uint32 j;
 	for(j = 0; j < size; j+= PAGE_SIZE)
 	{
-		for(i = 0;i < env_page_ws_get_size(e);i++)
+		for(i = 0; i < env_page_ws_get_size(e);i++)
 			if(e->__uptr_pws[i].virtual_address == temp_va)
 			{
 				env_page_ws_clear_entry(e, i);

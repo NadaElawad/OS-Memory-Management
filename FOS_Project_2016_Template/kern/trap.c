@@ -509,9 +509,20 @@ void page_fault_handler(struct Env * curenv, uint32 fault_va)
 		}
 		//modify idxToReplace by CLOCK logic
 		else if(isPageReplacmentAlgorithmCLOCK()){
-			//logic goes here..
-		}
+			uint32 killVA;
+			while(1==1){
+				killVA = env_page_ws_get_virtual_address(curenv, idxToReplace);
+				uint32 pageTableEntry;
+				uint32* pageT;
+				get_page_table(curenv->env_page_directory, (void*)killVA, &pageT);
+				pageTableEntry=pageT[PTX(killVA)];
 
+				if((pageTableEntry&PERM_USED)==0) break;
+				else pageT[PTX(killVA)]&=~(PERM_USED);
+
+				idxToReplace=(idxToReplace+1)%curenv->page_WS_max_size;
+			}
+		}
 		//remove page to be replaced regardless of the algorithm used
 		void *VA = (void*)env_page_ws_get_virtual_address(curenv, idxToReplace);
 		uint32 *page_table = NULL;
@@ -531,8 +542,7 @@ void page_fault_handler(struct Env * curenv, uint32 fault_va)
 	struct Frame_Info*ptr;
 	int r = allocate_frame(&ptr);
 	if(ptr == NULL) return;
-	map_frame(curenv->env_page_directory, ptr, (void*)fault_va, PERM_USER|PERM_WRITEABLE|PERM_PRESENT);
-
+	map_frame(curenv->env_page_directory, ptr, (void*)fault_va, PERM_USER|PERM_WRITEABLE|PERM_PRESENT|PERM_USED);
 	uint32 r1 = pf_read_env_page(curenv, (void*)fault_va);
 	if(r1 == 0){
 		env_page_ws_set_entry(curenv, idxToReplace, fault_va);
