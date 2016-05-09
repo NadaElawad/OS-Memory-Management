@@ -505,7 +505,7 @@ void page_fault_handler(struct Env * curenv, uint32 fault_va)
 		}
 		//modify idxToReplace by FIFO logic
 		else if(isPageReplacmentAlgorithmFIFO()){
-			//same as incrementing the last index.
+
 		}
 		//modify idxToReplace by CLOCK logic
 		else if(isPageReplacmentAlgorithmCLOCK()){

@@ -16,8 +16,8 @@ check_boot_pgdir() succeeded!
 
 Welcome to the FOS kernel command prompt!
 Type 'help' for a list of commands.
-FOS> lru
-Page replacement algorithm is now LRU
-FOS> run tpr3 9
+FOS> bestfit
+User Heap placement strategy is now BEST FIT
+FOS> run tpp 20
 
 Environment Id= 4096

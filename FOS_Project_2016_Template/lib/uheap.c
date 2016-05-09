@@ -28,11 +28,11 @@ struct Size_Address_UHeap{
 };
 
 struct Size_Address_UHeap sizeOfVAs[(USER_HEAP_MAX-USER_HEAP_START)/PAGE_SIZE];
-bool UHeap_Tracker[(USER_HEAP_MAX - USER_HEAP_START)/PAGE_SIZE];
+bool UHeap_Tracker[(USER_HEAP_MAX - USER_HEAP_START)/PAGE_SIZE] = {0};
 
 uint32 currentAddressForNextFitPlacement = USER_HEAP_START;
 uint32 firstFitAddress = USER_HEAP_START;
-uint32 generalAddress;
+uint32 generalAddress = USER_HEAP_START;
 void* malloc(uint32 size)
 {
 	//TODO: [PROJECT 2016 - Dynamic Allocation] malloc() [User Side]
@@ -52,46 +52,50 @@ void* malloc(uint32 size)
 	size = ROUNDUP(size, PAGE_SIZE);
 	if(sys_isUHeapPlacementStrategyNEXTFIT())
 	{
-			generalAddress = currentAddressForNextFitPlacement;
-			currentAddressForNextFitPlacement += size;
+		generalAddress = currentAddressForNextFitPlacement;
+		currentAddressForNextFitPlacement += size;
 	}
 	else if(sys_isUHeapPlacementStrategyFIRSTFIT())
 	{
-			generalAddress = firstFitAddress;
-			firstFitAddress += size;
+		generalAddress = firstFitAddress;
+		firstFitAddress += size;
 	}
 	else if(sys_isUHeapPlacementStrategyBESTFIT())
 	{
-		uint32 minViableSize = PAGE_SIZE*PAGE_SIZE;
-		uint32 i;
+		uint32 minViableSize = USER_HEAP_MAX - USER_HEAP_START;
+		uint32 i, j;
 		uint32 currentSize = 0;
 		generalAddress = USER_HEAP_START;
-		uint32 possibleReplacementAddress = USER_HEAP_START;
-		bool found = 0;
+		bool flag = 0,found=0;
 		for(i = USER_HEAP_START; i < USER_HEAP_MAX; i+= PAGE_SIZE)
 		{
-			if(UHeap_Tracker[(i - USER_HEAP_START)/PAGE_SIZE] == 0)
+			if(UHeap_Tracker[(i - USER_HEAP_START)/PAGE_SIZE] == 0 && flag == 1)
 				currentSize += PAGE_SIZE;
+			else if(UHeap_Tracker[(i - USER_HEAP_START)/PAGE_SIZE] == 0 && flag == 0){
+				flag = 1;
+				j = i;
+				currentSize += PAGE_SIZE;
+			}
 			else
 			{
-				currentSize += PAGE_SIZE;
-				possibleReplacementAddress += currentSize;
+				if(currentSize >= size && minViableSize > currentSize){
+					generalAddress = j;
+					minViableSize = currentSize;
+					found = 1;
+				}
+				flag = 0;
 				currentSize = 0;
 			}
-			if((UHeap_Tracker[(i - USER_HEAP_START)/PAGE_SIZE] == 1) && currentSize >= size && minViableSize > currentSize)
-			{
-				minViableSize = currentSize;
-				generalAddress = possibleReplacementAddress;
-				possibleReplacementAddress += currentSize;
-			}
 		}
+		if(found == 0 && currentSize >= size) generalAddress=j;
+		else if(found == 0) return NULL;
 	}
-	uint32 j;
-	for(j = (generalAddress - USER_HEAP_START)/PAGE_SIZE; j < size/PAGE_SIZE; ++j)
+	uint32 j, i = (generalAddress - USER_HEAP_START)/PAGE_SIZE;
+	for(j = 0; j < size/PAGE_SIZE; ++j)
 	{
-		UHeap_Tracker[j] = 1;
+		UHeap_Tracker[i+j] = 1;
 	}
-	int ret = generalAddress;
+	uint32 ret = generalAddress;
 	sys_allocateMem(generalAddress, size);
 	sizeOfVAs[(generalAddress - USER_HEAP_START)/PAGE_SIZE].size = size;
 	sizeOfVAs[(generalAddress - USER_HEAP_START)/PAGE_SIZE].virtualAddress = generalAddress;
@@ -112,24 +116,18 @@ void* malloc(uint32 size)
 
 void free(void* virtual_address)
 {
-<<<<<<< HEAD
-	//cprintf("Function free called in lib\n");
-	virtual_address=ROUNDDOWN(virtual_address, PAGE_SIZE);
-	uint32 sizeArray = sizeof(sizeOfVAs)/ sizeof(sizeOfVAs[0]);
-	uint32 i;
-	for(i = 0;i < sizeArray; ++i)
-	{
-		if((void *)sizeOfVAs[i].virtualAddress == virtual_address){
-			sys_freeMem((uint32)virtual_address, sizeOfVAs[i].size);
-			break;
-=======
-	uint32 i;
-	for(i = 0;i < (USER_HEAP_MAX - USER_HEAP_START)/PAGE_SIZE;++i)
+	uint32 i, j;
+	for(i = 0; i < (USER_HEAP_MAX - USER_HEAP_START)/PAGE_SIZE; ++i)
 	{
 		if((void *)sizeOfVAs[i].virtualAddress == virtual_address)
 		{
+			uint32 tmp = (sizeOfVAs[i].virtualAddress - USER_HEAP_START)/PAGE_SIZE;
+			for(j = 0; j < sizeOfVAs[i].size/PAGE_SIZE; ++j)
+			{
+				UHeap_Tracker[tmp+j] = 0;
+			}
 			sys_freeMem((uint32)virtual_address, sizeOfVAs[i].size);
->>>>>>> 0d334781c1ea22216b785673077e247e56f5e514
+			break;
 		}
 	}
 

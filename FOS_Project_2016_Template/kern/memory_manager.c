@@ -765,12 +765,11 @@ void allocateMem(struct Env* e, uint32 virtual_address, uint32 size)
 	int i;
 
 	for(i = 0; i < size; i++){
-		pf_add_empty_env_page(e,virtual_address, 0);
-		virtual_address+=PAGE_SIZE;
+		pf_add_empty_env_page(e, virtual_address, 0);
+		virtual_address += PAGE_SIZE;
 	}
 
 	return;
-	//TODO: [PROJECT 2016 - Dynamic Allocation] allocateMem() [Kernel Side]
 	// Write your code here, remove the panic and write your code
 	//panic("allocateMem() is not implemented yet...!!");
 
@@ -783,42 +782,25 @@ void allocateMem(struct Env* e, uint32 virtual_address, uint32 size)
 
 void freeMem(struct Env* e, uint32 virtual_address, uint32 size)
 {
-	//TODO: [PROJECT 2016 - Dynamic Deallocation] freeMem() [Kernel Side]
+	//env_page_ws_print(e);
 	//This function should:
 	//1. Free ALL pages of the given range from the Page File
 	//2. Free ONLY pages that are resident in the working set from the memory
 	//3. Removes ONLY the empty page tables (i.e. not used) (no pages are mapped in the table)
-<<<<<<< HEAD
-	//cprintf("Function freeMem called!\n");
+	uint32 i, j;
 	virtual_address = ROUNDDOWN(virtual_address, PAGE_SIZE);
 	size = ROUNDUP(size, PAGE_SIZE);
 	uint32 temp_va = virtual_address;
-	uint32 counter = 0, i;
-=======
-	uint32 i;
-	virtual_address = ROUNDDOWN(virtual_address, PAGE_SIZE);
-	size = ROUNDUP(size, PAGE_SIZE);
-	uint32 temp_va = virtual_address;
-	uint32 counter = 0;
->>>>>>> 0d334781c1ea22216b785673077e247e56f5e514
-	for(i = 0;i < size; i+= PAGE_SIZE)
+	for(i = 0; i < size; i += PAGE_SIZE)
 	{
 		pf_remove_env_page(e, temp_va);
 		temp_va += PAGE_SIZE;
-		++counter;
 	}
-	//cprintf("%d\n",counter);
 	temp_va = virtual_address;
-	uint32 j;
-	for(j = 0; j < size; j+= PAGE_SIZE)
+	for(j = 0; j < size; j += PAGE_SIZE)
 	{
-<<<<<<< HEAD
-		for(i = 0; i < env_page_ws_get_size(e);i++)
-			if(e->__uptr_pws[i].virtual_address == temp_va)
-=======
 		for(i = 0;i < e->page_WS_max_size;i++)
 			if(e->ptr_pageWorkingSet[i].virtual_address == temp_va)
->>>>>>> 0d334781c1ea22216b785673077e247e56f5e514
 			{
 				env_page_ws_clear_entry(e, i);
 				unmap_frame(e->env_page_directory,(void *)temp_va);
@@ -827,42 +809,32 @@ void freeMem(struct Env* e, uint32 virtual_address, uint32 size)
 		temp_va += PAGE_SIZE;
 	}
 	uint32 *ptr_page_table;
-	uint32 page_counter = 0;
 	//loop for the start of each table [loop start and end]
 	//get page table for i
 	temp_va = virtual_address;
-	for(i = 0; i < size;i += PAGE_SIZE)
+	for(i = 0; i < size; i += PAGE_SIZE)
 	{
+		uint32 page_counter = 0;
 		get_page_table(e->env_page_directory, (void *)temp_va, &ptr_page_table);
-		temp_va += PAGE_SIZE;
 		if(ptr_page_table != NULL)
 		{
-			uint32 j;
-			for(j = 0;j < 1024;++j)
+			for(j = 0; j < 1024; ++j)
 			{
 				uint32 tableEntry = ptr_page_table[j];
-				if(tableEntry == 0)
-					{
-						++page_counter; //cprintf("ok\n");
-						//cprintf("tables counter: %d %d\n", j, page_counter);
-					}
+				if(tableEntry != 0) break;
+				++page_counter;
 			}
-			//cprintf("page count\n");
 			if(page_counter == 1024)
 			{
-				cprintf("table\n");
-				//page_counter = 0;
 				kfree((void *) ptr_page_table);
-				cprintf("Tab Address %d\n", virtual_address);
 				e->env_page_directory[PDX(temp_va)] = 0;
 				tlbflush();
-				cprintf("tables counter: %d\n", page_counter);
-				cprintf("table freed\n");
-
 			}
-			page_counter = 0;
 		}
+		temp_va += PAGE_SIZE;
 	}
+	tlbflush();
+	//env_page_ws_print(e);
 }
 
 void __freeMem_with_buffering(struct Env* e, uint32 virtual_address, uint32 size) {

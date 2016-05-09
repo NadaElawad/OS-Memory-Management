@@ -22,19 +22,21 @@
 //		switches to the kernel mode, calls allocateMem(struct Env* e, uint32 virtual_address, uint32 size) in
 //		"memory_manager.c", then switch back to the user mode here
 //	the allocateMem function is empty, make sure to implement it.
+struct Size_Address_UHeap{
+	uint32 size;
+	uint32 virtualAddress;
+};
+
+struct Size_Address_UHeap sizeOfVAs[(USER_HEAP_MAX-USER_HEAP_START)/PAGE_SIZE];
+bool UHeap_Tracker[(USER_HEAP_MAX - USER_HEAP_START)/PAGE_SIZE];
 
 uint32 currentAddressForNextFitPlacement = USER_HEAP_START;
+uint32 firstFitAddress = USER_HEAP_START;
+uint32 generalAddress;
 void* malloc(uint32 size)
 {
-	size = ROUNDUP(size, PAGE_SIZE);
-	if(currentAddressForNextFitPlacement > USER_HEAP_MAX - size)
-		return NULL;
-
-	int ret = currentAddressForNextFitPlacement;
-	sys_allocateMem(currentAddressForNextFitPlacement, size);
-	currentAddressForNextFitPlacement += size;
-
-	return (void*)ret;
+	cprintf("Kern\n");
+	//TODO: [PROJECT 2016 - Dynamic Allocation] malloc() [User Side]
 	// Steps:
 	//	1) Implement both NEXT FIT and BEST FIT strategies to search the heap for suitable space
 	//		to the required allocation size (space should be on 4 KB BOUNDARY)
@@ -48,7 +50,54 @@ void* malloc(uint32 size)
 	//Use sys_isUHeapPlacementStrategyNEXTFIT() and	sys_isUHeapPlacementStrategyBESTFIT()
 	//to check the current strategy
 	//TODO: [PROJECT 2016 - BONUS2] Apply FIRST FIT and WORST FIT policies
-
+	size = ROUNDUP(size, PAGE_SIZE);
+	if(sys_isUHeapPlacementStrategyNEXTFIT())
+	{
+		generalAddress = currentAddressForNextFitPlacement;
+		currentAddressForNextFitPlacement += size;
+	}
+	else if(sys_isUHeapPlacementStrategyFIRSTFIT())
+	{
+		generalAddress = firstFitAddress;
+		firstFitAddress += size;
+	}
+	else if(sys_isUHeapPlacementStrategyBESTFIT())
+	{
+		uint32 minViableSize = 1e9;
+		uint32 i, j;
+		uint32 currentSize = 0;
+		generalAddress = USER_HEAP_START;
+		bool flag = 0;
+		for(i = USER_HEAP_START; i < USER_HEAP_MAX; i+= PAGE_SIZE)
+		{
+			if(UHeap_Tracker[(i - USER_HEAP_START)/PAGE_SIZE] == 0 && flag==1)
+				currentSize += PAGE_SIZE;
+			else if(UHeap_Tracker[(i - USER_HEAP_START)/PAGE_SIZE] == 0 && flag==0){
+				flag = 1;
+				j = i;
+				currentSize += PAGE_SIZE;
+			}
+			else
+			{
+				if(currentSize >= size && minViableSize > currentSize){
+					generalAddress = j;
+					minViableSize = currentSize;
+					flag = 0;
+					currentSize = 0;
+				}
+			}
+		}
+	}
+	uint32 j;
+	for(j = (generalAddress - USER_HEAP_START)/PAGE_SIZE; j < size/PAGE_SIZE; ++j)
+	{
+		UHeap_Tracker[j] = 1;
+	}
+	int ret = generalAddress;
+	sys_allocateMem(generalAddress, size);
+	sizeOfVAs[(generalAddress - USER_HEAP_START)/PAGE_SIZE].size = size;
+	sizeOfVAs[(generalAddress - USER_HEAP_START)/PAGE_SIZE].virtualAddress = generalAddress;
+	return (void*)ret;
 }
 
 
@@ -65,13 +114,22 @@ void* malloc(uint32 size)
 
 void free(void* virtual_address)
 {
+	uint32 i;
+	for(i = 0; i < (USER_HEAP_MAX - USER_HEAP_START)/PAGE_SIZE; ++i)
+	{
+		if((void *)sizeOfVAs[i].virtualAddress == virtual_address)
+		{
+			sys_freeMem((uint32)virtual_address, sizeOfVAs[i].size);
+			break;
+		}
+	}
+
 	//TODO: [PROJECT 2016 - Dynamic Deallocation] free() [User Side]
 	// Write your code here, remove the panic and write your code
-	panic("free() is not implemented yet...!!");
+	//panic("free() is not implemented yet...!!");
 
 	//get the size of the given allocation using its address
 	//you need to call sys_freeMem()
-
 }
 
 
