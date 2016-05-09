@@ -1,7 +1,0 @@
-#include <inc/lib.h>
-
-void _main(void)
-{
-
-	return;
-}
