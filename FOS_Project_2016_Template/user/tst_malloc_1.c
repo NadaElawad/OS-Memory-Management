@@ -5,7 +5,7 @@
 #include <inc/lib.h>
 
 void _main(void)
-{	
+{
 	int envID = sys_getenvid();
 
 	volatile struct Env* myEnv;
@@ -27,7 +27,7 @@ void _main(void)
 		freeFrames = sys_calculate_free_frames() ;
 		usedDiskPages = sys_pf_calculate_allocated_pages() ;
 		ptr_allocations[1] = malloc(2*Mega-kilo);
-		if ((uint32) ptr_allocations[1] < (USER_HEAP_START + 2*Mega) || (uint32) ptr_allocations[1] > (USER_HEAP_START + 2*Mega + PAGE_SIZE)) panic("Wrong start address for the allocated space... ");
+		if ((uint32) ptr_allocations[1] < (USER_HEAP_START + 2*Mega) || (uint32) ptr_allocations[1] > (USER_HEAP_START + 2*Mega + PAGE_SIZE)) panic("1Wrong start address for the allocated space... ");
 		//		if ((freeFrames - sys_calculate_free_frames()) != 512 ) panic("Wrong allocation: ");
 		if ((freeFrames - sys_calculate_free_frames()) != 0 ) panic("Wrong allocation: either extra pages are allocated in memory or pages not allocated correctly on PageFile");
 		if ((sys_pf_calculate_allocated_pages() - usedDiskPages) != 512) panic("Extra or less pages are allocated in PageFile");
@@ -72,6 +72,5 @@ void _main(void)
 	}
 
 	cprintf("Congratulations!! test malloc (1) completed successfully.\n");
-
 	return;
 }
