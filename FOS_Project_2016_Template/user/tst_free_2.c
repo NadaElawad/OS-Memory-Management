@@ -4,7 +4,7 @@
 #include <inc/lib.h>
 
 void _main(void)
-{	
+{
 	int envID = sys_getenvid();
 
 	//Bypass the PAGE FAULT on <MOVB immediate, reg> instruction by setting its length

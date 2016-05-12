@@ -31,11 +31,9 @@ struct Size_Address_UHeap sizeOfVAs[(USER_HEAP_MAX-USER_HEAP_START)/PAGE_SIZE];
 bool UHeap_Tracker[(USER_HEAP_MAX - USER_HEAP_START)/PAGE_SIZE] = {0};
 
 uint32 currentAddressForNextFitPlacement = USER_HEAP_START;
-uint32 firstFitAddress = USER_HEAP_START;
 uint32 generalAddress = USER_HEAP_START;
 void* malloc(uint32 size)
 {
-	//TODO: [PROJECT 2016 - Dynamic Allocation] malloc() [User Side]
 	// Steps:
 	//	1) Implement both NEXT FIT and BEST FIT strategies to search the heap for suitable space
 	//		to the required allocation size (space should be on 4 KB BOUNDARY)
@@ -52,13 +50,72 @@ void* malloc(uint32 size)
 	size = ROUNDUP(size, PAGE_SIZE);
 	if(sys_isUHeapPlacementStrategyNEXTFIT())
 	{
-		generalAddress = currentAddressForNextFitPlacement;
-		currentAddressForNextFitPlacement += size;
+		//cprintf("=======%x\n", generalAddress);
+		uint32 k = (USER_HEAP_MAX-USER_HEAP_START)/PAGE_SIZE, i = generalAddress, j;
+		uint32 currentSize = 0;
+		bool flag = 0, found = 0;
+		while(k-- != 0)
+		{
+			if(UHeap_Tracker[(i - USER_HEAP_START)/PAGE_SIZE] == 0 && flag == 1)
+				currentSize += PAGE_SIZE;
+			else if(UHeap_Tracker[(i - USER_HEAP_START)/PAGE_SIZE] == 0 && flag == 0){
+				flag = 1;
+				j = i;
+				currentSize += PAGE_SIZE;
+			}
+			else
+			{
+				if(currentSize >= size){
+					generalAddress = j;
+					found = 1;
+					break;
+				}
+				flag = 0;
+				currentSize = 0;
+			}
+			if(currentSize >= size){
+				generalAddress = j;
+				found = 1;
+				break;
+			}
+			i += PAGE_SIZE;
+			if(i >= USER_HEAP_MAX){
+				currentSize = 0;
+				flag = 0;
+				i = USER_HEAP_START;
+			}
+		}
+		if(found == 0 && currentSize >= size) generalAddress = j;
+		else if(found == 0) return NULL;
 	}
 	else if(sys_isUHeapPlacementStrategyFIRSTFIT())
 	{
-		generalAddress = firstFitAddress;
-		firstFitAddress += size;
+		uint32 i, j;
+		uint32 currentSize = 0;
+		generalAddress = USER_HEAP_START;
+		bool flag = 0,found=0;
+		for(i = USER_HEAP_START; i < USER_HEAP_MAX; i+= PAGE_SIZE)
+		{
+			if(UHeap_Tracker[(i - USER_HEAP_START)/PAGE_SIZE] == 0 && flag == 1)
+				currentSize += PAGE_SIZE;
+			else if(UHeap_Tracker[(i - USER_HEAP_START)/PAGE_SIZE] == 0 && flag == 0){
+				flag = 1;
+				j = i;
+				currentSize += PAGE_SIZE;
+			}
+			else
+			{
+				if(currentSize >= size){
+					generalAddress = j;
+					found = 1;
+					break;
+				}
+				flag = 0;
+				currentSize = 0;
+			}
+		}
+		if(found == 0 && currentSize >= size) generalAddress=j;
+		else if(found == 0) return NULL;
 	}
 	else if(sys_isUHeapPlacementStrategyBESTFIT())
 	{
@@ -90,6 +147,36 @@ void* malloc(uint32 size)
 		if(found == 0 && currentSize >= size) generalAddress=j;
 		else if(found == 0) return NULL;
 	}
+	else if(sys_isUHeapPlacementStrategyWORSTFIT())
+	{
+		uint32 maxViableSize = 0;
+		uint32 i, j;
+		uint32 currentSize = 0;
+		generalAddress = USER_HEAP_START;
+		bool flag = 0,found=0;
+		for(i = USER_HEAP_START; i < USER_HEAP_MAX; i+= PAGE_SIZE)
+		{
+			if(UHeap_Tracker[(i - USER_HEAP_START)/PAGE_SIZE] == 0 && flag == 1)
+				currentSize += PAGE_SIZE;
+			else if(UHeap_Tracker[(i - USER_HEAP_START)/PAGE_SIZE] == 0 && flag == 0){
+				flag = 1;
+				j = i;
+				currentSize += PAGE_SIZE;
+			}
+			else
+			{
+				if(currentSize >= size && maxViableSize < currentSize){
+					generalAddress = j;
+					maxViableSize = currentSize;
+					found = 1;
+				}
+				flag = 0;
+				currentSize = 0;
+			}
+		}
+		if(found == 0 && currentSize >= size) generalAddress=j;
+		else if(found == 0) return NULL;
+	}
 	uint32 j, i = (generalAddress - USER_HEAP_START)/PAGE_SIZE;
 	for(j = 0; j < size/PAGE_SIZE; ++j)
 	{
@@ -99,6 +186,7 @@ void* malloc(uint32 size)
 	sys_allocateMem(generalAddress, size);
 	sizeOfVAs[(generalAddress - USER_HEAP_START)/PAGE_SIZE].size = size;
 	sizeOfVAs[(generalAddress - USER_HEAP_START)/PAGE_SIZE].virtualAddress = generalAddress;
+	if(generalAddress+size>=USER_HEAP_MAX) generalAddress=USER_HEAP_START;
 	return (void*)ret;
 }
 
@@ -127,6 +215,8 @@ void free(void* virtual_address)
 				UHeap_Tracker[tmp+j] = 0;
 			}
 			sys_freeMem((uint32)virtual_address, sizeOfVAs[i].size);
+			sizeOfVAs[i].virtualAddress = 0;
+			sizeOfVAs[i].size = 0;
 			break;
 		}
 	}

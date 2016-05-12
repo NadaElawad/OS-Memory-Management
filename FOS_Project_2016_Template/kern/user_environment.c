@@ -225,7 +225,8 @@ void * create_user_page_WS(unsigned int numOfElements)
 
 void * create_user_directory()
 {
-	void *allocaedAddress = kmalloc(PAGE_SIZE);
+	uint32 *allocaedAddress = kmalloc(PAGE_SIZE), i;
+	for(i = 0; i < 1024; i++) allocaedAddress[i] = 0;
 	return allocaedAddress;
 	//TODO: [PROJECT 2016 - Kernel Dynamic Allocation/Deallocation] create_user_directory()
 	// Write your code here, remove the panic and write your code

@@ -530,13 +530,14 @@ int get_page_table(uint32 *ptr_page_directory, const void *virtual_address, uint
 
 void * create_page_table(uint32 *ptr_page_directory, const uint32 virtual_address)
 {
-	//TODO: [PROJECT 2016 - Kernel Dynamic Allocation/Deallocation] create_page_table()
-	// Write your code here, remove the panic and write your code
-	void *page_table_addr = kmalloc(PAGE_SIZE);
+	uint32 *page_table_addr = kmalloc(PAGE_SIZE);
 
 	if(page_table_addr==NULL) return NULL;
 
-	uint32 pa = kheap_physical_address((uint32)page_table_addr);
+	uint32 pa = kheap_physical_address((uint32)page_table_addr),i;
+
+	for(i = 0; i < 1024; i++) page_table_addr[i] = 0;
+
 	ptr_page_directory[PDX(virtual_address)] = (pa&(0xFFFFF000))|PERM_USER|PERM_WRITEABLE|PERM_PRESENT;
 
 	return page_table_addr;

@@ -277,7 +277,7 @@ void trap(struct Trapframe *tf)
 		if (bypassInstrLength != 0){
 			if (userTrap){
 				curenv->env_tf.tf_eip = (uint32*)((uint32)(curenv->env_tf.tf_eip)+bypassInstrLength);
-
+				env_run(curenv);
 			}
 			else {
 				tf->tf_eip = (uint32*)((uint32)(tf->tf_eip) + bypassInstrLength);
@@ -485,7 +485,6 @@ void __page_fault_handler_with_buffering(struct Env * curenv, uint32 fault_va)
 {
 
 }
-
 
 //Handle the page fault
 void page_fault_handler(struct Env * curenv, uint32 fault_va)
