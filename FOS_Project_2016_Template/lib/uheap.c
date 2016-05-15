@@ -34,23 +34,9 @@ uint32 currentAddressForNextFitPlacement = USER_HEAP_START;
 uint32 generalAddress = USER_HEAP_START;
 void* malloc(uint32 size)
 {
-	// Steps:
-	//	1) Implement both NEXT FIT and BEST FIT strategies to search the heap for suitable space
-	//		to the required allocation size (space should be on 4 KB BOUNDARY)
-	//	2) if no suitable space found, return NULL
-	//	 Else,
-	//	3) Call sys_allocateMem to invoke the Kernel for allocation
-	// 	4) Return pointer containing the virtual address of allocated space,
-	//
-	//This function should find the space of the required range
-	// ******** ON 4KB BOUNDARY ******************* //
-	//Use sys_isUHeapPlacementStrategyNEXTFIT() and	sys_isUHeapPlacementStrategyBESTFIT()
-	//to check the current strategy
-	//TODO: [PROJECT 2016 - BONUS2] Apply FIRST FIT and WORST FIT policies
 	size = ROUNDUP(size, PAGE_SIZE);
 	if(sys_isUHeapPlacementStrategyNEXTFIT())
 	{
-		//cprintf("=======%x\n", generalAddress);
 		uint32 k = (USER_HEAP_MAX-USER_HEAP_START)/PAGE_SIZE, i = generalAddress, j;
 		uint32 currentSize = 0;
 		bool flag = 0, found = 0;
@@ -221,7 +207,6 @@ void free(void* virtual_address)
 		}
 	}
 
-	//TODO: [PROJECT 2016 - Dynamic Deallocation] free() [User Side]
 	// Write your code here, remove the panic and write your code
 	//panic("free() is not implemented yet...!!");
 
@@ -252,6 +237,7 @@ void *realloc(void *virtual_address, uint32 new_size)
 {
 	//TODO: [PROJECT 2016 - BONUS4] realloc() [User Side]
 	// Write your code here, remove the panic and write your code
+
 	panic("realloc() is not implemented yet...!!");
 
 }
