@@ -719,15 +719,29 @@ void env_free(struct Env *e)
 
 	//TODO: [PROJECT 2016 - Exit] env_free()
 
-	//YOUR CODE STARTS HERE, remove the panic and write your code ----
-	panic("env_free() is not implemented yet...!!");
-
 	// [1] Free the pages in the PAGE working set from the main memory
+	uint32 i;
+	uint32 va;
+	for(i = 0;i < e->page_WS_max_size;++i)
+	{
+		 va = env_page_ws_get_virtual_address(e, i);
+		 if(e->ptr_pageWorkingSet[i].empty == 0)
+			 unmap_frame(e->env_page_directory, (void *)va);
+	}
 	// [2] Free the PAGE working set array itself from the main memory
+	kfree((void *) e->ptr_pageWorkingSet);
 	// [3] Free all TABLES from the main memory
+	for(i = 0; i < PDX(USER_TOP);++i)
+	{
+		if(e->env_page_directory[i] != 0)
+		{
+			uint32 pa = e->env_page_directory[i];
+			uint32 va = kheap_virtual_address(pa);
+			kfree((void *) va);
+		}
+	}
 	// [4] Free the page DIRECTORY from the main memory
-
-
+	kfree((void *)e->env_page_directory);
 
 	//YOUR CODE ENDS HERE --------------------------------------------
 
