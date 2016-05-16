@@ -40,14 +40,19 @@ void* malloc(uint32 size)
 		uint32 k = (USER_HEAP_MAX-USER_HEAP_START)/PAGE_SIZE, i = generalAddress, j;
 		uint32 currentSize = 0;
 		bool flag = 0, found = 0;
-		while(k-- != 0)
+		while(k != 0)
 		{
-			if(UHeap_Tracker[(i - USER_HEAP_START)/PAGE_SIZE] == 0 && flag == 1)
+			if(UHeap_Tracker[(i - USER_HEAP_START)/PAGE_SIZE] == 0 && flag == 1){
 				currentSize += PAGE_SIZE;
+				k--;
+				i+=PAGE_SIZE;
+			}
 			else if(UHeap_Tracker[(i - USER_HEAP_START)/PAGE_SIZE] == 0 && flag == 0){
 				flag = 1;
 				j = i;
 				currentSize += PAGE_SIZE;
+				k--;
+				i+=PAGE_SIZE;
 			}
 			else
 			{
@@ -56,6 +61,8 @@ void* malloc(uint32 size)
 					found = 1;
 					break;
 				}
+				k-=UHeap_Tracker[(i - USER_HEAP_START)/PAGE_SIZE];
+				i+=PAGE_SIZE*UHeap_Tracker[(i - USER_HEAP_START)/PAGE_SIZE];
 				flag = 0;
 				currentSize = 0;
 			}
@@ -64,7 +71,6 @@ void* malloc(uint32 size)
 				found = 1;
 				break;
 			}
-			i += PAGE_SIZE;
 			if(i >= USER_HEAP_MAX){
 				currentSize = 0;
 				flag = 0;
@@ -80,14 +86,17 @@ void* malloc(uint32 size)
 		uint32 currentSize = 0;
 		generalAddress = USER_HEAP_START;
 		bool flag = 0,found=0;
-		for(i = USER_HEAP_START; i < USER_HEAP_MAX; i+= PAGE_SIZE)
+		for(i = USER_HEAP_START; i < USER_HEAP_MAX; )
 		{
-			if(UHeap_Tracker[(i - USER_HEAP_START)/PAGE_SIZE] == 0 && flag == 1)
+			if(UHeap_Tracker[(i - USER_HEAP_START)/PAGE_SIZE] == 0 && flag == 1){
 				currentSize += PAGE_SIZE;
+				i+=PAGE_SIZE;
+			}
 			else if(UHeap_Tracker[(i - USER_HEAP_START)/PAGE_SIZE] == 0 && flag == 0){
 				flag = 1;
 				j = i;
 				currentSize += PAGE_SIZE;
+				i+=PAGE_SIZE;
 			}
 			else
 			{
@@ -96,6 +105,7 @@ void* malloc(uint32 size)
 					found = 1;
 					break;
 				}
+				i+=PAGE_SIZE*UHeap_Tracker[(i - USER_HEAP_START)/PAGE_SIZE];
 				flag = 0;
 				currentSize = 0;
 			}
@@ -110,14 +120,17 @@ void* malloc(uint32 size)
 		uint32 currentSize = 0;
 		generalAddress = USER_HEAP_START;
 		bool flag = 0,found=0;
-		for(i = USER_HEAP_START; i < USER_HEAP_MAX; i+= PAGE_SIZE)
+		for(i = USER_HEAP_START; i < USER_HEAP_MAX;)
 		{
-			if(UHeap_Tracker[(i - USER_HEAP_START)/PAGE_SIZE] == 0 && flag == 1)
+			if(UHeap_Tracker[(i - USER_HEAP_START)/PAGE_SIZE] == 0 && flag == 1){
 				currentSize += PAGE_SIZE;
+				i+=PAGE_SIZE;
+			}
 			else if(UHeap_Tracker[(i - USER_HEAP_START)/PAGE_SIZE] == 0 && flag == 0){
 				flag = 1;
 				j = i;
 				currentSize += PAGE_SIZE;
+				i+=PAGE_SIZE;
 			}
 			else
 			{
@@ -126,6 +139,7 @@ void* malloc(uint32 size)
 					minViableSize = currentSize;
 					found = 1;
 				}
+				i+=PAGE_SIZE*UHeap_Tracker[(i - USER_HEAP_START)/PAGE_SIZE];
 				flag = 0;
 				currentSize = 0;
 			}
@@ -140,14 +154,17 @@ void* malloc(uint32 size)
 		uint32 currentSize = 0;
 		generalAddress = USER_HEAP_START;
 		bool flag = 0,found=0;
-		for(i = USER_HEAP_START; i < USER_HEAP_MAX; i+= PAGE_SIZE)
+		for(i = USER_HEAP_START; i < USER_HEAP_MAX;)
 		{
-			if(UHeap_Tracker[(i - USER_HEAP_START)/PAGE_SIZE] == 0 && flag == 1)
+			if(UHeap_Tracker[(i - USER_HEAP_START)/PAGE_SIZE] == 0 && flag == 1){
 				currentSize += PAGE_SIZE;
+				i+=PAGE_SIZE;
+			}
 			else if(UHeap_Tracker[(i - USER_HEAP_START)/PAGE_SIZE] == 0 && flag == 0){
 				flag = 1;
 				j = i;
 				currentSize += PAGE_SIZE;
+				i+=PAGE_SIZE;
 			}
 			else
 			{
@@ -156,6 +173,7 @@ void* malloc(uint32 size)
 					maxViableSize = currentSize;
 					found = 1;
 				}
+				i+=PAGE_SIZE*UHeap_Tracker[(i - USER_HEAP_START)/PAGE_SIZE];
 				flag = 0;
 				currentSize = 0;
 			}
@@ -164,10 +182,7 @@ void* malloc(uint32 size)
 		else if(found == 0) return NULL;
 	}
 	uint32 j, i = (generalAddress - USER_HEAP_START)/PAGE_SIZE;
-	for(j = 0; j < size/PAGE_SIZE; ++j)
-	{
-		UHeap_Tracker[i+j] = 1;
-	}
+	UHeap_Tracker[i] = size/PAGE_SIZE;
 	uint32 ret = generalAddress;
 	sys_allocateMem(generalAddress, size);
 	sizeOfVAs[(generalAddress - USER_HEAP_START)/PAGE_SIZE].size = size;
@@ -196,10 +211,7 @@ void free(void* virtual_address)
 		if((void *)sizeOfVAs[i].virtualAddress == virtual_address)
 		{
 			uint32 tmp = (sizeOfVAs[i].virtualAddress - USER_HEAP_START)/PAGE_SIZE;
-			for(j = 0; j < sizeOfVAs[i].size/PAGE_SIZE; ++j)
-			{
-				UHeap_Tracker[tmp+j] = 0;
-			}
+			UHeap_Tracker[tmp] = 0;
 			sys_freeMem((uint32)virtual_address, sizeOfVAs[i].size);
 			sizeOfVAs[i].virtualAddress = 0;
 			sizeOfVAs[i].size = 0;
